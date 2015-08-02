@@ -34,3 +34,7 @@ local.properties
 ### Nodejs ###
 node_modules/
 build/
+
+### Git ###
+.DS_Store
+.git

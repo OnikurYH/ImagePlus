@@ -27,7 +27,11 @@
             }],
             ['OS=="mac"', {
                 'xcode_settings': {
-                    'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+                    'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+                    'OTHER_CFLAGS': [
+                        '<!@(Magick++-config --cflags)'
+                    ],
+                    'MACOSX_DEPLOYMENT_TARGET': '10.7'
                 },
                 "libraries": [
                     '<!@(Magick++-config --ldflags --libs)',

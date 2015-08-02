@@ -6,11 +6,16 @@
   "keywords": [
     "imagemagick"
   ],
-  "author": "Onikur",
+  "author": "OnikurYH <onikuryh@gmail.com> (https://github.com/OnikurYH/)",
   "license": "GPL-3.0",
   "gypfile": true,
   "engines": {
-    "node": ">= 1.0"
+    "node": ">=0.10.0"
+  },
+  "repository" :
+  {
+    "type" : "git",
+    "url" : "https://github.com/OnikurYH/ImagePlus.git"
   },
   "dependencies": {
     "nan": "^2.0.0"
