@@ -10,7 +10,7 @@ console.log("[ImagePlus] You can connect the web server on your bowser: http://l
 
 http.createServer(function (req, res) {
     
-    fs.readFile(putil.getCurrentFolder () + "/resources/demo_img.png", function (err, data) {
+    fs.readFile(putil.getCurrentFolder () + "/../resources/imageplus_logo.png", function (err, data) {
         if (err)
         {
             res.end("ERROR! " + err.message);

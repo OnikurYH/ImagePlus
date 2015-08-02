@@ -6,10 +6,10 @@ var fs = require("fs");
 
 console.log("[ImagePlus] Start example: composite");
 
-var imageBackgroundData = fs.readFileSync(putil.getCurrentFolder () + "/resources/demo_img.png");
+var imageBackgroundData = fs.readFileSync(putil.getCurrentFolder () + "/../resources/imageplus_logo.png");
 var imageBackground = new Image(imageBackgroundData);
 
-var imageStarData = fs.readFileSync(putil.getCurrentFolder () + "/resources/demo_img_star.png");
+var imageStarData = fs.readFileSync(putil.getCurrentFolder () + "/../resources/demo_img_star.png");
 var imageStar = new Image(imageStarData);
 imageStar.resize(90, 90);
 imageBackground.composite(imageStar, 120, 140);

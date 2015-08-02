@@ -6,7 +6,7 @@ var fs = require("fs");
 
 console.log("[ImagePlus] Start example: filter");
 
-var imageData = fs.readFileSync(putil.getCurrentFolder () + "/resources/demo_img_star_small.png");
+var imageData = fs.readFileSync(putil.getCurrentFolder () + "/../resources/demo_img_star_small.png");
 
 var imageBackground = new Image(128, 640, 1, 1, 1);
 
