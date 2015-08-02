@@ -1,0 +1,25 @@
+{
+  "name": "imageplus",
+  "version": "0.0.1",
+  "description": "A node js imagemagick API",
+  "main": "index.js",
+  "keywords": [
+    "imagemagick"
+  ],
+  "author": "Onikur",
+  "license": "GPL-3.0",
+  "gypfile": true,
+  "engines": {
+    "node": ">= 1.0"
+  },
+  "dependencies": {
+    "nan": "^2.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.2.5"
+  },
+  "scripts": {
+    "test": "mocha --reporter spec --check-leaks test/",
+    "install": "node-gyp rebuild"
+  }
+}
