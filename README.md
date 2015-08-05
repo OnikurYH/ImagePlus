@@ -20,6 +20,9 @@ A node.js imagemagick API
 2. Install npm-gyp `npm install npm-gyp -g`
 3. Run `npm install imageplus`
 
+### Windows
+Windows version may not stable on this time
+
 ## Usage
 ImagePlus is a object oriented imagemagick API, you can easy to edit a image / SVG file.
 
