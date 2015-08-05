@@ -10,4 +10,4 @@ NAN_MODULE_INIT(InitAll) {
     Magick::InitializeMagick("");
 }
 
-NODE_MODULE(addon, InitAll);
+NODE_MODULE(imageplus, InitAll);
