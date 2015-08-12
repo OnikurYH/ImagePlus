@@ -113,6 +113,18 @@ Here is a filter list
 img.setFilterType("Point");
 ```
 
+### fillImage
+`Image.fillImage(int area, double red, double green, double blue);`
+```javascript
+img.fillImage(80, 0, 0, 0);
+```
+
+### clone
+`Image.clone();`
+```javascript
+var otherImg = img.clone();
+```
+
 ### File type
 `Image.setType(string fileType);`
 ```javascript
