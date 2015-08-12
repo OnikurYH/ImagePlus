@@ -16,25 +16,30 @@ class PImage : public ObjectWrap
         static NAN_MODULE_INIT(Init);
 
     private:
+        PImage(int width, int height);
         PImage(int width, int height, int red, int green, int blue);
         PImage(int width, int height, std::string hexBackgroundColor);
         PImage(char* imgBuffer, size_t bufSize);
+        PImage(const PImage& otherPImage);
         ~PImage();
 
         static Persistent<v8::Function> constructor;
         static NAN_METHOD(New);
-        
+
         static NAN_METHOD(resize);
         static NAN_METHOD(crop);
         static NAN_METHOD(composite);
         static NAN_METHOD(blur);
         static NAN_METHOD(shadow);
+        static NAN_METHOD(fillImage);
+        static NAN_METHOD(outlineImage);
         static NAN_METHOD(setBackgroundColor);
         static NAN_METHOD(setFilterType);
         static NAN_METHOD(setType);
+        static NAN_METHOD(clone);
         static NAN_METHOD(toBuffer);
         static NAN_METHOD(toFile);
-        
+
         Magick::Image magickImg_;
 };
 #endif
