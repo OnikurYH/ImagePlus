@@ -1,5 +1,7 @@
 #include "PImage.h"
 
+Nan::Persistent<v8::Function> PImage::constructor;
+
 // Enums
 // Magick FilterTypes
 template <>
@@ -25,45 +27,42 @@ EnumParser<Magick::FilterTypes>::EnumParser()
 EnumParser<Magick::FilterTypes> magickFilterTypes;
 // End Enums
 
-Persistent<v8::Function> PImage::constructor;
-
 PImage::PImage(int width, int height)
 {
-    Magick::Image magickImg (Magick::Geometry(width, height), Magick::Color(0, 0, 0, 0));
-    magickImg_ = magickImg;
+    mImage = new Magick::Image (Magick::Geometry(width, height), Magick::Color());
+    mImage->matte(true);
 }
 
 PImage::PImage(int width, int height, int red, int green, int blue)
 {
-    Magick::Image magickImg (Magick::Geometry(width, height), Magick::ColorRGB(red, green, blue));
-    magickImg_ = magickImg;
+    mImage = new Magick::Image (Magick::Geometry(width, height), Magick::ColorRGB(red, green, blue));
 }
 
 PImage::PImage(int width, int height, std::string hexBackgroundColor)
 {
-    Magick::Image magickImg (Magick::Geometry(width, height), Magick::Color(hexBackgroundColor));
-    magickImg_ = magickImg;
+    mImage = new Magick::Image (Magick::Geometry(width, height), Magick::Color(hexBackgroundColor));
 }
 
 PImage::PImage(char* imgBuffer, size_t bufSize)
 {
-    Magick::Blob imgBlob (imgBuffer, bufSize);
-    Magick::Image magickImg (imgBlob);
-    magickImg_ = magickImg;
+    Magick::Blob *blob = new Magick::Blob(imgBuffer, bufSize);
+    mImage = new Magick::Image (*blob);
 }
-
+/*
 PImage::PImage(const PImage& otherPImage)
 {
-    magickImg_ = otherPImage.magickImg_;
+    mImage = otherPImage.mImage;
 }
-
+*/
 PImage::~PImage()
 {
-
+    delete mImage;
 }
 
-NAN_MODULE_INIT(PImage::Init)
+void PImage::Init(v8::Local<v8::Object> exports)
 {
+    Nan::HandleScope scope;
+
     // Prepare constructor template
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(PImage::New);
     tpl->SetClassName(Nan::New("PImage").ToLocalChecked());
@@ -85,10 +84,10 @@ NAN_MODULE_INIT(PImage::Init)
     Nan::SetPrototypeMethod(tpl, "toFile", toFile);
 
     constructor.Reset(tpl->GetFunction());
-    Nan::Set(target, Nan::New("PImage").ToLocalChecked(), tpl->GetFunction());
+    exports->Set(Nan::New("PImage").ToLocalChecked(), tpl->GetFunction());
 }
 
-NAN_METHOD(PImage::New)
+void PImage::New (const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if (info.IsConstructCall())
     {
@@ -176,7 +175,7 @@ NAN_METHOD(PImage::New)
  * @param width New width
  * @param height New height
  */
-NAN_METHOD(PImage::resize)
+void PImage::resize (const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined() || info[1]->IsUndefined()) ||
 	(!info[0]->IsNumber() || !info[1]->IsNumber()))
@@ -188,8 +187,8 @@ NAN_METHOD(PImage::resize)
     int width = info[0]->NumberValue();
     int height = info[1]->NumberValue();
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.resize(Magick::Geometry(width, height));
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->resize(Magick::Geometry(width, height));
 }
 
 /**
@@ -199,7 +198,7 @@ NAN_METHOD(PImage::resize)
  * @param width Width
  * @param height Height
  */
-NAN_METHOD(PImage::crop)
+void PImage::crop(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined() || info[1]->IsUndefined() || info[2]->IsUndefined() || info[3]->IsUndefined()) ||
         (!info[0]->IsNumber()   || !info[1]->IsNumber()   || !info[2]->IsNumber()   || !info[3]->IsNumber()))
@@ -213,9 +212,9 @@ NAN_METHOD(PImage::crop)
     int width = info[2]->NumberValue();
     int height = info[3]->NumberValue();
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.chop(Magick::Geometry(x, y));
-    pImage->magickImg_.crop(Magick::Geometry(width, height));
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->chop(Magick::Geometry(x, y));
+    pImage->mImage->crop(Magick::Geometry(width, height));
 }
 
 /**
@@ -224,7 +223,7 @@ NAN_METHOD(PImage::crop)
  * @param x Position x
  * @param y Position y
  */
-NAN_METHOD(PImage::composite)
+void PImage::composite(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined() || info[1]->IsUndefined() || info[2]->IsUndefined()) ||
         (!info[0]->IsObject()   || !info[1]->IsNumber()   || !info[2]->IsNumber()))
@@ -233,12 +232,12 @@ NAN_METHOD(PImage::composite)
         info.GetReturnValue().SetUndefined();
     }
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    PImage* otherPImage = node::ObjectWrap::Unwrap<PImage>(info[0]->ToObject());
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    PImage* otherPImage = Nan::ObjectWrap::Unwrap<PImage>(info[0]->ToObject());
     int x = info[1]->NumberValue();
     int y = info[2]->NumberValue();
 
-    pImage->magickImg_.composite(otherPImage->magickImg_, x, y, Magick::OverCompositeOp);
+    pImage->mImage->composite(*otherPImage->mImage, x, y, Magick::OverCompositeOp);
 }
 
 /**
@@ -246,7 +245,7 @@ NAN_METHOD(PImage::composite)
  * @param radius Radius
  * @param sigma Sigma
  */
-NAN_METHOD(PImage::blur)
+void PImage::blur(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined() || info[1]->IsUndefined()) ||
         (!info[0]->IsNumber() || !info[1]->IsNumber()))
@@ -258,8 +257,8 @@ NAN_METHOD(PImage::blur)
     double radius = info[0]->NumberValue();
     double sigma = info[1]->NumberValue();
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.blur(radius, sigma);
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->blur(radius, sigma);
 }
 
 /**
@@ -269,7 +268,7 @@ NAN_METHOD(PImage::blur)
  * @param opacity Opacity 0 ~ 100
  * @param sigma sigma
  */
-NAN_METHOD(PImage::shadow)
+void PImage::shadow(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined() || info[1]->IsUndefined() || info[2]->IsUndefined() || info[3]->IsUndefined()) ||
         (!info[0]->IsNumber()   || !info[1]->IsNumber()   || !info[2]->IsNumber()   || !info[3]->IsNumber()))
@@ -293,15 +292,17 @@ NAN_METHOD(PImage::shadow)
         shadowColor = Magick::Color(std::string(*hexColor));
     }
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    Magick::Image imgShadow = pImage->magickImg_;
-    imgShadow.backgroundColor(shadowColor);
-    imgShadow.shadow(opacity, sigma, xOffset, yOffset);
-    imgShadow.composite(pImage->magickImg_, 0, 0, Magick::OverCompositeOp);
-    pImage->magickImg_ = imgShadow;
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    Magick::Image *imgShadow = new Magick::Image(*pImage->mImage);
+    imgShadow->backgroundColor(shadowColor);
+    imgShadow->shadow(opacity, sigma, xOffset, yOffset);
+    imgShadow->composite(*pImage->mImage, 0, 0, Magick::OverCompositeOp);
+
+    delete pImage->mImage;
+    pImage->mImage = imgShadow;
 }
 
-NAN_METHOD(PImage::fillImage)
+void PImage::fillImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() || !info[3]->IsNumber())
     {
@@ -314,26 +315,26 @@ NAN_METHOD(PImage::fillImage)
     double green = info[2]->NumberValue();
     double blue = info[3]->NumberValue();
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
     Magick::Color target = Magick::Color("rgb(65535, 65535, 65535)");
     Magick::Color fill   = Magick::ColorRGB(red, green, blue);
     const double fuzz = area * 65535 / 100;
 
-    pImage->magickImg_.colorFuzz(fuzz);
-    pImage->magickImg_.opaque(target, fill);
+    pImage->mImage->colorFuzz(fuzz);
+    pImage->mImage->opaque(target, fill);
 }
 
-NAN_METHOD(PImage::outlineImage)
+void PImage::outlineImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     /*
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
 
     Magick::Color target = Magick::Color("rgb(65535, 65535, 65535)");
     Magick::Color fill   = Magick::ColorRGB(1, 0, 0);
     const double fuzz = 80 * 65535 / 100;
 
 
-    Magick::Image img0 = pImage->magickImg_;
+    Magick::Image img0 = pImage->mImage;
     img0.channel(Magick::MatteChannel);
     img0.threshold(0);
 
@@ -348,12 +349,12 @@ NAN_METHOD(PImage::outlineImage)
     img1.composite(img0, 0, 0, Magick::OverCompositeOp);
     img2.composite(img1, 0, 0, Magick::OverCompositeOp);
 
-    //pImage->magickImg_.composite(img2, 0, 0, Magick::CopyBlueCompositeOp);
-    img2.composite(pImage->magickImg_, 0, 0, Magick::CopyBlueCompositeOp);
+    //pImage->mImage.composite(img2, 0, 0, Magick::CopyBlueCompositeOp);
+    img2.composite(pImage->mImage, 0, 0, Magick::CopyBlueCompositeOp);
     */
 
     /*
-    Magick::Image imgOutline = pImage->magickImg_;
+    Magick::Image imgOutline = pImage->mImage;
     imgOutline.colorFuzz(fuzz);
     imgOutline.opaque(target, fill);
     imgOutline.blur(5, 65000);
@@ -361,12 +362,12 @@ NAN_METHOD(PImage::outlineImage)
     imgOutline.negate(false);
     imgOutline.resize(Magick::Geometry(imgOutline.columns() + 10, imgOutline.rows() + 10));
 
-    //pImage->magickImg_.composite(imgOutline, 0, 0, Magick::OverCompositeOp);
-    imgOutline.composite(pImage->magickImg_, 0, 0, Magick::OverCompositeOp);
+    //pImage->mImage.composite(imgOutline, 0, 0, Magick::OverCompositeOp);
+    imgOutline.composite(pImage->mImage, 0, 0, Magick::OverCompositeOp);
     */
 }
 
-NAN_METHOD(PImage::setBackgroundColor)
+void PImage::setBackgroundColor(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if (info.Length() == 1)
     {
@@ -376,8 +377,8 @@ NAN_METHOD(PImage::setBackgroundColor)
         }
 
         v8::String::Utf8Value hexColor (info[0]->ToString());
-        PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-        pImage->magickImg_.backgroundColor(Magick::Color(std::string(*hexColor)));
+        PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+        pImage->mImage->backgroundColor(Magick::Color(std::string(*hexColor)));
     }
     else if (info.Length() == 3)
     {
@@ -391,8 +392,8 @@ NAN_METHOD(PImage::setBackgroundColor)
         double blue = info[2]->NumberValue();
 
         v8::String::Utf8Value hexColor (info[4]->ToString());
-        PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-        pImage->magickImg_.backgroundColor(Magick::ColorRGB(red, green, blue));
+        PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+        pImage->mImage->backgroundColor(Magick::ColorRGB(red, green, blue));
     }
     else
     {
@@ -400,7 +401,7 @@ NAN_METHOD(PImage::setBackgroundColor)
     }
 }
 
-NAN_METHOD(PImage::setFilterType)
+void PImage::setFilterType(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||
         (!info[0]->IsString()))
@@ -412,11 +413,11 @@ NAN_METHOD(PImage::setFilterType)
     v8::String::Utf8Value filterTypesName (info[0]->ToString());
     Magick::FilterTypes targetFilterType = magickFilterTypes.parse(std::string(*filterTypesName));
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.filterType(targetFilterType);
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->filterType(targetFilterType);
 }
 
-NAN_METHOD(PImage::setType)
+void PImage::setType(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||
         (!info[0]->IsString()))
@@ -427,16 +428,16 @@ NAN_METHOD(PImage::setType)
 
     v8::String::Utf8Value type (info[0]->ToString());
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.magick(std::string(*type));
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->magick(std::string(*type));
 }
 
-NAN_METHOD(PImage::clone)
+void PImage::clone(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
 
     Magick::Blob outBlob;
-    pImage->magickImg_.write(&outBlob);
+    pImage->mImage->write(&outBlob);
     v8::Local<v8::Object> outBuffer = Nan::CopyBuffer((char*) outBlob.data(), outBlob.length()+1).ToLocalChecked();
 
     v8::Local<v8::Value> argv[1] = { outBuffer };
@@ -448,18 +449,18 @@ NAN_METHOD(PImage::clone)
  * Image to nodejs buffer
  * @return Nodejs buffer
  */
-NAN_METHOD(PImage::toBuffer)
+void PImage::toBuffer(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
 
     Magick::Blob outBlob;
-    pImage->magickImg_.write(&outBlob);
+    pImage->mImage->write(&outBlob);
 
     v8::Local<v8::Object> outBuffer = Nan::CopyBuffer((char*) outBlob.data(), outBlob.length()+1).ToLocalChecked();
     info.GetReturnValue().Set(outBuffer);
 }
 
-NAN_METHOD(PImage::toFile)
+void PImage::toFile(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||
         (!info[0]->IsString()))
@@ -470,6 +471,6 @@ NAN_METHOD(PImage::toFile)
 
     v8::String::Utf8Value fileName (info[0]->ToString());
 
-    PImage* pImage = node::ObjectWrap::Unwrap<PImage>(info.This());
-    pImage->magickImg_.write(std::string(*fileName));
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->write(std::string(*fileName));
 }

@@ -8,38 +8,36 @@
 #include "IPUtil.h"
 #include "EnumParser.h"
 
-using namespace Nan;
-
-class PImage : public ObjectWrap
+class PImage : public Nan::ObjectWrap
 {
     public:
-        static NAN_MODULE_INIT(Init);
+        static void Init(v8::Local<v8::Object> exports);
 
     private:
         PImage(int width, int height);
         PImage(int width, int height, int red, int green, int blue);
         PImage(int width, int height, std::string hexBackgroundColor);
         PImage(char* imgBuffer, size_t bufSize);
-        PImage(const PImage& otherPImage);
         ~PImage();
 
-        static Persistent<v8::Function> constructor;
-        static NAN_METHOD(New);
+        static void New         (const Nan::FunctionCallbackInfo<v8::Value>& info);
 
-        static NAN_METHOD(resize);
-        static NAN_METHOD(crop);
-        static NAN_METHOD(composite);
-        static NAN_METHOD(blur);
-        static NAN_METHOD(shadow);
-        static NAN_METHOD(fillImage);
-        static NAN_METHOD(outlineImage);
-        static NAN_METHOD(setBackgroundColor);
-        static NAN_METHOD(setFilterType);
-        static NAN_METHOD(setType);
-        static NAN_METHOD(clone);
-        static NAN_METHOD(toBuffer);
-        static NAN_METHOD(toFile);
+        static void resize      (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void crop        (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void composite   (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void blur        (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void shadow      (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void fillImage   (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void outlineImage (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void setBackgroundColor (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void setFilterType (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void setType     (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void clone       (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void toBuffer    (const Nan::FunctionCallbackInfo<v8::Value>& info);
+        static void toFile      (const Nan::FunctionCallbackInfo<v8::Value>& info);
 
-        Magick::Image magickImg_;
+        static Nan::Persistent<v8::Function> constructor;
+
+        Magick::Image *mImage;
 };
 #endif

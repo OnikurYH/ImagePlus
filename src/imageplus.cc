@@ -5,8 +5,8 @@
 
 using namespace Nan;
 
-NAN_MODULE_INIT(InitAll) {
-    PImage::Init(target);
+void InitAll(v8::Local<v8::Object> exports) {
+    PImage::Init(exports);
     Magick::InitializeMagick("");
 }
 
