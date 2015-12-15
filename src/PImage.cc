@@ -75,6 +75,15 @@ void PImage::Init(v8::Local<v8::Object> exports)
     Nan::SetPrototypeMethod(tpl, "blur", blur);
     Nan::SetPrototypeMethod(tpl, "shadow", shadow);
     Nan::SetPrototypeMethod(tpl, "fillImage", fillImage);
+
+    Nan::SetPrototypeMethod(tpl, "setStrokeColor", setStrokeColor);
+    Nan::SetPrototypeMethod(tpl, "setStrokeWidth", setStrokeWidth);
+    Nan::SetPrototypeMethod(tpl, "setFillColor", setFillColor);
+    Nan::SetPrototypeMethod(tpl, "setFont", setFont);
+    Nan::SetPrototypeMethod(tpl, "setFontSize", setFontSize);
+    Nan::SetPrototypeMethod(tpl, "getFontMetrics", getFontMetrics);
+    Nan::SetPrototypeMethod(tpl, "drawText", drawText);
+
     Nan::SetPrototypeMethod(tpl, "outlineImage", outlineImage);
     Nan::SetPrototypeMethod(tpl, "setBackgroundColor", setBackgroundColor);
     Nan::SetPrototypeMethod(tpl, "setFilterType", setFilterType);
@@ -291,7 +300,6 @@ void PImage::shadow(const Nan::FunctionCallbackInfo<v8::Value>& info)
         v8::String::Utf8Value hexColor (info[4]->ToString());
         shadowColor = Magick::Color(std::string(*hexColor));
     }
-
     PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
     Magick::Image *imgShadow = new Magick::Image(*pImage->mImage);
     imgShadow->backgroundColor(shadowColor);
@@ -302,6 +310,13 @@ void PImage::shadow(const Nan::FunctionCallbackInfo<v8::Value>& info)
     pImage->mImage = imgShadow;
 }
 
+/**
+ * Fill image
+ * @param Area area size
+ * @param red Red
+ * @param green Green
+ * @param blue Blue
+ */
 void PImage::fillImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() || !info[3]->IsNumber())
@@ -324,6 +339,155 @@ void PImage::fillImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
     pImage->mImage->opaque(target, fill);
 }
 
+// Drawing ---------------------------------------------------------------------/
+
+/**
+ * Set stroke color
+ * @param Color hex color or color name
+ */
+void PImage::setStrokeColor(const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsString())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    v8::String::Utf8Value rawStrColor (info[0]->ToString());
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->strokeColor(std::string(*rawStrColor));
+}
+
+/**
+ * Set stroke width
+ * @param width Stroke width
+ */
+void PImage::setStrokeWidth(const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsNumber())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    double width = info[0]->NumberValue();
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->strokeWidth(width);
+}
+
+/**
+ * Set fill color
+ * @param Color hex color or color name
+ */
+void PImage::setFillColor(const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsString())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    v8::String::Utf8Value rawStrColor (info[0]->ToString());
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->fillColor(std::string(*rawStrColor));
+}
+
+/**
+ * Set font
+ * @param fontName Set font from file path (with prefix "@") or system font name
+ */
+void PImage::setFont (const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsString())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    v8::String::Utf8Value rawStrFontName (info[0]->ToString());
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->font(std::string(*rawStrFontName));
+}
+
+/**
+ * Set font size
+ * @param fontSize Font size
+ */
+void PImage::setFontSize (const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsNumber())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    size_t fontSize = info[0]->NumberValue();
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->fontPointsize(fontSize);
+}
+
+/**
+ * Get font metrics
+ * @param text Text
+ * @return Object with ascent, descent, textWidth, textHeight and maxHorizontalAdvance
+ */
+void PImage::getFontMetrics (const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsString())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    v8::String::Utf8Value rawStrText (info[0]->ToString());
+    std::string strText = std::string(*rawStrText);
+    Magick::TypeMetric *typeMetric = new Magick::TypeMetric();
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->fontTypeMetrics(strText, typeMetric);
+
+    v8::Local<v8::Object> returnObj = Nan::New<v8::Object>();
+    Nan::Set(returnObj, Nan::New<v8::String>("ascent").ToLocalChecked(), Nan::New<v8::Number>(typeMetric->ascent()));
+    Nan::Set(returnObj, Nan::New<v8::String>("descent").ToLocalChecked(), Nan::New<v8::Number>(typeMetric->descent()));
+    Nan::Set(returnObj, Nan::New<v8::String>("textWidth").ToLocalChecked(), Nan::New<v8::Number>(typeMetric->textWidth()));
+    Nan::Set(returnObj, Nan::New<v8::String>("textHeight").ToLocalChecked(), Nan::New<v8::Number>(typeMetric->textHeight()));
+    Nan::Set(returnObj, Nan::New<v8::String>("maxHorizontalAdvance").ToLocalChecked(), Nan::New<v8::Number>(typeMetric->maxHorizontalAdvance()));
+
+    info.GetReturnValue().Set(returnObj);
+}
+
+/**
+ * Draw text to image
+ * @param x Top left X
+ * @param y Top left Y
+ * @param text Text
+ */
+void PImage::drawText(const Nan::FunctionCallbackInfo<v8::Value>& info)
+{
+    if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsString())
+    {
+        Nan::ThrowError("Invalid argument!");
+        info.GetReturnValue().SetUndefined();
+    }
+
+    int x = info[0]->NumberValue();
+    int y = info[1]->NumberValue();
+    v8::String::Utf8Value utfText (info[2]->ToString());
+    std::string text = std::string(*utfText);
+
+    PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
+    pImage->mImage->draw(Magick::DrawableText(x, y, text));
+}
+
+/**
+ * Outline image
+ * Work in progress
+ */
 void PImage::outlineImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     /*
@@ -367,6 +531,9 @@ void PImage::outlineImage(const Nan::FunctionCallbackInfo<v8::Value>& info)
     */
 }
 
+/**
+ * Set background color
+ */
 void PImage::setBackgroundColor(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if (info.Length() == 1)
@@ -401,6 +568,10 @@ void PImage::setBackgroundColor(const Nan::FunctionCallbackInfo<v8::Value>& info
     }
 }
 
+/**
+ * Set filer type
+ * @param filerType The filer type name
+ */
 void PImage::setFilterType(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||
@@ -417,6 +588,10 @@ void PImage::setFilterType(const Nan::FunctionCallbackInfo<v8::Value>& info)
     pImage->mImage->filterType(targetFilterType);
 }
 
+/**
+ * Set image type
+ * @param type The image type
+ */
 void PImage::setType(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||
@@ -432,6 +607,10 @@ void PImage::setType(const Nan::FunctionCallbackInfo<v8::Value>& info)
     pImage->mImage->magick(std::string(*type));
 }
 
+/**
+ * Clone image object
+ * @return Clone image object
+ */
 void PImage::clone(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     PImage* pImage = Nan::ObjectWrap::Unwrap<PImage>(info.This());
@@ -460,6 +639,10 @@ void PImage::toBuffer(const Nan::FunctionCallbackInfo<v8::Value>& info)
     info.GetReturnValue().Set(outBuffer);
 }
 
+/**
+ * Image to file
+ * @param fileName File name with path
+ */
 void PImage::toFile(const Nan::FunctionCallbackInfo<v8::Value>& info)
 {
     if ((info[0]->IsUndefined()) ||

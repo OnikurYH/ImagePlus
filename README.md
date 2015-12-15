@@ -6,19 +6,16 @@ A node.js imagemagick API
 ## Install
 ### Mac OS X
 1. Install [ImageMagick](http://www.imagemagick.org/script/index.php) from Homebrew, MacPorts or Binary
-2. Install npm-gyp `npm install npm-gyp -g`
-3. Run `npm install imageplus`
+2. Run `npm install imageplus`
 
 ### Linux
 #### Debian / Ubuntu
 1. Install [ImageMagick](http://www.imagemagick.org/script/index.php) and Magick++ `sudo apt-get install imagemagick libmagick++-dev`
-2. Install npm-gyp `npm install npm-gyp -g`
-3. Run `npm install imageplus`
+2. Run `npm install imageplus`
 
 #### Redhat / CentOS / Fedora
 1. Install [ImageMagick](http://www.imagemagick.org/script/index.php) and Magick++ `sudo apt-get install ImageMagick ImageMagick-devel`
-2. Install npm-gyp `npm install npm-gyp -g`
-3. Run `npm install imageplus`
+2. Run `npm install imageplus`
 
 ### Windows
 Windows version may not stable on this time
@@ -32,6 +29,9 @@ var imageplus = require("imageplus");
 var Image = imageplus.Image;
 ```
 and now, you can use the API
+
+## Examples
+You can find all the examples on [here](https://github.com/OnikurYH/ImagePlus/tree/master/example)
 
 ## API
 ### New image
@@ -117,6 +117,57 @@ img.setFilterType("Point");
 `Image.fillImage(int area, double red, double green, double blue);`
 ```javascript
 img.fillImage(80, 0, 0, 0);
+```
+
+### setStrokeColor
+`Image.setStrokeColor(string hexColorOrColorName)`
+```javascript
+img.setStrokeColor("#00AAFF");
+img.setStrokeColor("blue");
+```
+
+### setStrokeWidth
+`Image.setStrokeWidth(double width)` width is on pixel
+```javascript
+img.setStrokeWidth(20.5);
+```
+
+### setFillColor
+`Image.setFillColor(string hexColorOrColorName)`
+```javascript
+img.setFillColor("#00AAFF");
+img.setFillColor("blue");
+```
+
+### setFont
+`Image.setFont(string fontName)` System font name or a font file path with prefix "@"
+```javascript
+img.setFont("helvetica-bold");
+img.setFont("@/var/fonts/myCoolFont.ttf");
+img.setFont("@./myLocalCoolFont.ttf");
+```
+
+### setFontSize
+`Image.setFontSize(int fontSize)` Font size in pixel
+```javascript
+img.setFontSize(20);
+```
+
+### getFontMetrics
+`Image.getFontMetrics(string text)` This function is useful if your text is dynamic
+
+It will return a object contain { ascent, descent, textWidth, textHeight, maxHorizontalAdvance }
+
+```javascript
+var fontMetrics = img.getFontMetrics(myDynamicUserInputText);
+img.drawText(2, 10,myDynamicUserInputText);
+img.drawText(2 + fontMetrics.textWidth + 2, 10, "after the user input text");
+```
+
+### drawText
+`Image.drawText(int x, int y, string text)`
+```javascript
+img.drawText(30, 10, "This is a text!");
 ```
 
 ### clone
